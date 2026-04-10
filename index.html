@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoCal Store - Trailer & Truck Batch Board</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #e0e0e0;
+      letter-spacing: 1px;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+
+    .legend-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.green { background: #00c853; }
+    .legend-dot.red { background: #ff1744; }
+    .legend-dot.blue { background: #2979ff; }
+
+    .section {
+      max-width: 1200px;
+      margin: 0 auto 40px auto;
+    }
+
+    .section-header {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #333;
+      color: #e0e0e0;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #16213e;
+      border-radius: 10px;
+      padding: 15px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      border: 3px solid transparent;
+      user-select: none;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .card:active {
+      transform: translateY(0);
+    }
+
+    /* Status border colors */
+    .card.status-in-use {
+      border-color: #00c853;
+      box-shadow: 0 0 12px rgba(0, 200, 83, 0.3);
+    }
+
+    .card.status-maintenance {
+      border-color: #ff1744;
+      box-shadow: 0 0 12px rgba(255, 23, 68, 0.3);
+    }
+
+    .card.status-ready {
+      border-color: #2979ff;
+      box-shadow: 0 0 12px rgba(41, 121, 255, 0.3);
+    }
+
+    .card-number {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card.status-in-use .card-number { color: #00c853; }
+    .card.status-maintenance .card-number { color: #ff1744; }
+    .card.status-ready .card-number { color: #2979ff; }
+
+    .card-status {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #aaa;
+    }
+
+    .card.status-in-use .card-status { color: #00c853; }
+    .card.status-maintenance .card-status { color: #ff1744; }
+    .card.status-ready .card-status { color: #2979ff; }
+
+    /* Status indicator dot */
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin: 0 auto 6px auto;
+    }
+
+    .card.status-in-use .status-dot { background: #00c853; }
+    .card.status-maintenance .status-dot { background: #ff1744; }
+    .card.status-ready .status-dot { background: #2979ff; }
+
+    /* Dropdown menu */
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f3460;
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 100;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      min-width: 160px;
+      margin-top: 5px;
+    }
+
+    .dropdown.open {
+      display: block;
+    }
+
+    .dropdown-option {
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    .dropdown-option:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .dropdown-option.opt-in-use { color: #00c853; }
+    .dropdown-option.opt-maintenance { color: #ff1744; }
+    .dropdown-option.opt-ready { color: #2979ff; }
+
+    /* Summary counters */
+    .summary {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .summary-badge {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .summary-badge.green { background: rgba(0,200,83,0.15); color: #00c853; border: 1px solid #00c853; }
+    .summary-badge.red { background: rgba(255,23,68,0.15); color: #ff1744; border: 1px solid #ff1744; }
+    .summary-badge.blue { background: rgba(41,121,255,0.15); color: #2979ff; border: 1px solid #2979ff; }
+
+    /* Overlay to close dropdowns */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+    }
+
+    .overlay.active {
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.4rem; }
+      .board-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
+      }
+      .card { padding: 12px 8px; }
+      .card-number { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>SoCal Store - Batch Board</h1>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot green"></div> In Use</div>
+    <div class="legend-item"><div class="legend-dot red"></div> Maintenance Required</div>
+    <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
+  </div>
+
+  <!-- Delivery Trucks Section -->
+  <div class="section">
+    <div class="section-header">Delivery Trucks</div>
+    <div class="summary" id="truck-summary"></div>
+    <div class="board-grid" id="truck-board"></div>
+  </div>
+
+  <!-- Rental Trailers Section -->
+  <div class="section">
+    <div class="section-header">Rental Trailers</div>
+    <div class="summary" id="trailer-summary"></div>
+    <div class="board-grid" id="trailer-board"></div>
+  </div>
+
+  <!-- Overlay to close any open dropdown -->
+  <div class="overlay" id="overlay"></div>
+
+  <script>
+    const STATUSES = {
+      'in-use':       { label: 'In Use',       class: 'status-in-use' },
+      'maintenance':  { label: 'Maintenance',   class: 'status-maintenance' },
+      'ready':        { label: 'Ready',          class: 'status-ready' }
+    };
+
+    const TRUCK_COUNT = 12;
+    const TRAILER_COUNT = 50;
+
+    const STORAGE_KEY = 'socal-batch-board';
+
+    // Load saved state or initialize defaults
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) { /* ignore */ }
+      return null;
+    }
+
+    function saveState() {
+      const state = { trucks: {}, trailers: {} };
+      document.querySelectorAll('#truck-board .card').forEach(card => {
+        state.trucks[card.dataset.id] = card.dataset.status;
+      });
+      document.querySelectorAll('#trailer-board .card').forEach(card => {
+        state.trailers[card.dataset.id] = card.dataset.status;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function createCard(id, type, initialStatus) {
+      const card = document.createElement('div');
+      card.className = `card ${STATUSES[initialStatus].class}`;
+      card.dataset.id = id;
+      card.dataset.type = type;
+      card.dataset.status = initialStatus;
+
+      card.innerHTML = `
+        <div class="status-dot"></div>
+        <div class="card-number">${id}</div>
+        <div class="card-status">${STATUSES[initialStatus].label}</div>
+        <div class="dropdown">
+          <div class="dropdown-option opt-in-use" data-status="in-use">In Use</div>
+          <div class="dropdown-option opt-maintenance" data-status="maintenance">Maintenance Required</div>
+          <div class="dropdown-option opt-ready" data-status="ready">Ready for Use</div>
+        </div>
+      `;
+
+      card.addEventListener('click', function (e) {
+        // If clicking a dropdown option
+        if (e.target.classList.contains('dropdown-option')) {
+          const newStatus = e.target.dataset.status;
+          setCardStatus(card, newStatus);
+          closeAllDropdowns();
+          saveState();
+          updateSummaries();
+          return;
+        }
+        // Otherwise toggle dropdown
+        e.stopPropagation();
+        const wasOpen = card.querySelector('.dropdown').classList.contains('open');
+        closeAllDropdowns();
+        if (!wasOpen) {
+          card.querySelector('.dropdown').classList.add('open');
+          document.getElementById('overlay').classList.add('active');
+        }
+      });
+
+      return card;
+    }
+
+    function setCardStatus(card, status) {
+      // Remove old status classes
+      Object.values(STATUSES).forEach(s => card.classList.remove(s.class));
+      // Apply new
+      card.classList.add(STATUSES[status].class);
+      card.dataset.status = status;
+      card.querySelector('.card-status').textContent = STATUSES[status].label;
+    }
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+      document.getElementById('overlay').classList.remove('active');
+    }
+
+    function updateSummaries() {
+      updateSummary('truck-board', 'truck-summary');
+      updateSummary('trailer-board', 'trailer-summary');
+    }
+
+    function updateSummary(boardId, summaryId) {
+      const cards = document.querySelectorAll(`#${boardId} .card`);
+      let inUse = 0, maint = 0, ready = 0;
+      cards.forEach(c => {
+        if (c.dataset.status === 'in-use') inUse++;
+        else if (c.dataset.status === 'maintenance') maint++;
+        else ready++;
+      });
+      document.getElementById(summaryId).innerHTML = `
+        <span class="summary-badge green">In Use: ${inUse}</span>
+        <span class="summary-badge red">Maintenance: ${maint}</span>
+        <span class="summary-badge blue">Ready: ${ready}</span>
+      `;
+    }
+
+    // Build the boards
+    function init() {
+      const state = loadState();
+      const truckBoard = document.getElementById('truck-board');
+      const trailerBoard = document.getElementById('trailer-board');
+
+      for (let i = 1; i <= TRUCK_COUNT; i++) {
+        const status = (state && state.trucks && state.trucks[i]) || 'ready';
+        truckBoard.appendChild(createCard(i, 'truck', status));
+      }
+
+      for (let i = 1; i <= TRAILER_COUNT; i++) {
+        const status = (state && state.trailers && state.trailers[i]) || 'ready';
+        trailerBoard.appendChild(createCard(i, 'trailer', status));
+      }
+
+      updateSummaries();
+
+      // Close dropdowns when clicking overlay
+      document.getElementById('overlay').addEventListener('click', closeAllDropdowns);
+    }
+
+    init();
+  </script>
+</body>
+</html>
