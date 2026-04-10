@@ -69,7 +69,7 @@
 
     .board-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 12px;
     }
 
@@ -79,19 +79,8 @@
       padding: 15px 10px;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
       border: 3px solid transparent;
       user-select: none;
-      position: relative;
-    }
-
-    .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-
-    .card:active {
-      transform: translateY(0);
     }
 
     /* Status border colors */
@@ -113,74 +102,55 @@
     .card-number {
       font-size: 1.8rem;
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .card.status-in-use .card-number { color: #00c853; }
     .card.status-maintenance .card-number { color: #ff1744; }
     .card.status-ready .card-number { color: #2979ff; }
 
-    .card-status {
+    .card-label {
       font-size: 0.7rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #aaa;
+      margin-bottom: 8px;
     }
 
-    .card.status-in-use .card-status { color: #00c853; }
-    .card.status-maintenance .card-status { color: #ff1744; }
-    .card.status-ready .card-status { color: #2979ff; }
+    .card.status-in-use .card-label { color: #00c853; }
+    .card.status-maintenance .card-label { color: #ff1744; }
+    .card.status-ready .card-label { color: #2979ff; }
 
-    /* Status indicator dot */
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin: 0 auto 6px auto;
-    }
-
-    .card.status-in-use .status-dot { background: #00c853; }
-    .card.status-maintenance .status-dot { background: #ff1744; }
-    .card.status-ready .status-dot { background: #2979ff; }
-
-    /* Dropdown menu */
-    .dropdown {
+    /* Status buttons inside each card */
+    .status-buttons {
       display: none;
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #0f3460;
-      border-radius: 8px;
-      overflow: hidden;
-      z-index: 100;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      min-width: 160px;
-      margin-top: 5px;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 8px;
     }
 
-    .dropdown.open {
-      display: block;
+    .card.expanded .status-buttons {
+      display: flex;
     }
 
-    .dropdown-option {
-      padding: 10px 16px;
-      font-size: 0.85rem;
-      font-weight: 500;
+    .status-btn {
+      padding: 6px 8px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s;
-      white-space: nowrap;
-      text-align: left;
+      color: #fff;
+      transition: opacity 0.15s;
     }
 
-    .dropdown-option:hover {
-      background: rgba(255,255,255,0.1);
+    .status-btn:hover {
+      opacity: 0.85;
     }
 
-    .dropdown-option.opt-in-use { color: #00c853; }
-    .dropdown-option.opt-maintenance { color: #ff1744; }
-    .dropdown-option.opt-ready { color: #2979ff; }
+    .status-btn.btn-in-use { background: #00c853; }
+    .status-btn.btn-maintenance { background: #ff1744; }
+    .status-btn.btn-ready { background: #2979ff; }
 
     /* Summary counters */
     .summary {
@@ -202,14 +172,10 @@
     .summary-badge.red { background: rgba(255,23,68,0.15); color: #ff1744; border: 1px solid #ff1744; }
     .summary-badge.blue { background: rgba(41,121,255,0.15); color: #2979ff; border: 1px solid #2979ff; }
 
-    .card.dropdown-open {
-      z-index: 200;
-    }
-
     @media (max-width: 600px) {
       h1 { font-size: 1.4rem; }
       .board-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 8px;
       }
       .card { padding: 12px 8px; }
@@ -240,96 +206,128 @@
     <div class="board-grid" id="trailer-board"></div>
   </div>
 
-
   <script>
-    const STATUSES = {
-      'in-use':       { label: 'In Use',       class: 'status-in-use' },
-      'maintenance':  { label: 'Maintenance',   class: 'status-maintenance' },
-      'ready':        { label: 'Ready',          class: 'status-ready' }
+    var STATUSES = {
+      'in-use':      { label: 'In Use',       cssClass: 'status-in-use' },
+      'maintenance': { label: 'Maintenance',   cssClass: 'status-maintenance' },
+      'ready':       { label: 'Ready',          cssClass: 'status-ready' }
     };
 
-    const TRUCK_COUNT = 12;
-    const TRAILER_COUNT = 50;
+    var TRUCK_COUNT = 12;
+    var TRAILER_COUNT = 50;
+    var STORAGE_KEY = 'socal-batch-board';
 
-    const STORAGE_KEY = 'socal-batch-board';
-
-    // Load saved state or initialize defaults
     function loadState() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        var saved = localStorage.getItem(STORAGE_KEY);
         if (saved) return JSON.parse(saved);
-      } catch (e) { /* ignore */ }
+      } catch (e) {}
       return null;
     }
 
     function saveState() {
-      const state = { trucks: {}, trailers: {} };
-      document.querySelectorAll('#truck-board .card').forEach(card => {
-        state.trucks[card.dataset.id] = card.dataset.status;
-      });
-      document.querySelectorAll('#trailer-board .card').forEach(card => {
-        state.trailers[card.dataset.id] = card.dataset.status;
-      });
+      var state = { trucks: {}, trailers: {} };
+      var truckCards = document.getElementById('truck-board').getElementsByClassName('card');
+      for (var i = 0; i < truckCards.length; i++) {
+        state.trucks[truckCards[i].getAttribute('data-id')] = truckCards[i].getAttribute('data-status');
+      }
+      var trailerCards = document.getElementById('trailer-board').getElementsByClassName('card');
+      for (var i = 0; i < trailerCards.length; i++) {
+        state.trailers[trailerCards[i].getAttribute('data-id')] = trailerCards[i].getAttribute('data-status');
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
+    function setCardStatus(card, status) {
+      card.classList.remove('status-in-use', 'status-maintenance', 'status-ready');
+      card.classList.add(STATUSES[status].cssClass);
+      card.setAttribute('data-status', status);
+      card.querySelector('.card-label').textContent = STATUSES[status].label;
+      // Collapse after picking
+      card.classList.remove('expanded');
+    }
+
+    function collapseAll() {
+      var expanded = document.querySelectorAll('.card.expanded');
+      for (var i = 0; i < expanded.length; i++) {
+        expanded[i].classList.remove('expanded');
+      }
+    }
+
     function createCard(id, type, initialStatus) {
-      const card = document.createElement('div');
-      card.className = `card ${STATUSES[initialStatus].class}`;
-      card.dataset.id = id;
-      card.dataset.type = type;
-      card.dataset.status = initialStatus;
+      var card = document.createElement('div');
+      card.className = 'card ' + STATUSES[initialStatus].cssClass;
+      card.setAttribute('data-id', id);
+      card.setAttribute('data-type', type);
+      card.setAttribute('data-status', initialStatus);
 
-      card.innerHTML = `
-        <div class="status-dot"></div>
-        <div class="card-number">${id}</div>
-        <div class="card-status">${STATUSES[initialStatus].label}</div>
-        <div class="dropdown">
-          <div class="dropdown-option opt-in-use" data-status="in-use">In Use</div>
-          <div class="dropdown-option opt-maintenance" data-status="maintenance">Maintenance Required</div>
-          <div class="dropdown-option opt-ready" data-status="ready">Ready for Use</div>
-        </div>
-      `;
+      var numberDiv = document.createElement('div');
+      numberDiv.className = 'card-number';
+      numberDiv.textContent = id;
 
-      card.addEventListener('click', function (e) {
+      var labelDiv = document.createElement('div');
+      labelDiv.className = 'card-label';
+      labelDiv.textContent = STATUSES[initialStatus].label;
+
+      var btnContainer = document.createElement('div');
+      btnContainer.className = 'status-buttons';
+
+      var btnInUse = document.createElement('button');
+      btnInUse.className = 'status-btn btn-in-use';
+      btnInUse.textContent = 'In Use';
+      btnInUse.setAttribute('type', 'button');
+
+      var btnMaint = document.createElement('button');
+      btnMaint.className = 'status-btn btn-maintenance';
+      btnMaint.textContent = 'Maintenance';
+      btnMaint.setAttribute('type', 'button');
+
+      var btnReady = document.createElement('button');
+      btnReady.className = 'status-btn btn-ready';
+      btnReady.textContent = 'Ready';
+      btnReady.setAttribute('type', 'button');
+
+      // Button click handlers
+      btnInUse.onclick = function(e) {
         e.stopPropagation();
+        setCardStatus(card, 'in-use');
+        saveState();
+        updateSummaries();
+      };
 
-        // If clicking a dropdown option
-        const option = e.target.closest('.dropdown-option');
-        if (option) {
-          const newStatus = option.dataset.status;
-          setCardStatus(card, newStatus);
-          closeAllDropdowns();
-          saveState();
-          updateSummaries();
-          return;
-        }
+      btnMaint.onclick = function(e) {
+        e.stopPropagation();
+        setCardStatus(card, 'maintenance');
+        saveState();
+        updateSummaries();
+      };
 
-        // Otherwise toggle dropdown
-        const dropdown = card.querySelector('.dropdown');
-        const wasOpen = dropdown.classList.contains('open');
-        closeAllDropdowns();
-        if (!wasOpen) {
-          dropdown.classList.add('open');
-          card.classList.add('dropdown-open');
+      btnReady.onclick = function(e) {
+        e.stopPropagation();
+        setCardStatus(card, 'ready');
+        saveState();
+        updateSummaries();
+      };
+
+      btnContainer.appendChild(btnInUse);
+      btnContainer.appendChild(btnMaint);
+      btnContainer.appendChild(btnReady);
+
+      card.appendChild(numberDiv);
+      card.appendChild(labelDiv);
+      card.appendChild(btnContainer);
+
+      // Card click to expand/collapse
+      card.onclick = function(e) {
+        e.stopPropagation();
+        var isExpanded = card.classList.contains('expanded');
+        collapseAll();
+        if (!isExpanded) {
+          card.classList.add('expanded');
         }
-      });
+      };
 
       return card;
-    }
-
-    function setCardStatus(card, status) {
-      // Remove old status classes
-      Object.values(STATUSES).forEach(s => card.classList.remove(s.class));
-      // Apply new
-      card.classList.add(STATUSES[status].class);
-      card.dataset.status = status;
-      card.querySelector('.card-status').textContent = STATUSES[status].label;
-    }
-
-    function closeAllDropdowns() {
-      document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
-      document.querySelectorAll('.card.dropdown-open').forEach(c => c.classList.remove('dropdown-open'));
     }
 
     function updateSummaries() {
@@ -338,40 +336,42 @@
     }
 
     function updateSummary(boardId, summaryId) {
-      const cards = document.querySelectorAll(`#${boardId} .card`);
-      let inUse = 0, maint = 0, ready = 0;
-      cards.forEach(c => {
-        if (c.dataset.status === 'in-use') inUse++;
-        else if (c.dataset.status === 'maintenance') maint++;
+      var cards = document.getElementById(boardId).getElementsByClassName('card');
+      var inUse = 0, maint = 0, ready = 0;
+      for (var i = 0; i < cards.length; i++) {
+        var s = cards[i].getAttribute('data-status');
+        if (s === 'in-use') inUse++;
+        else if (s === 'maintenance') maint++;
         else ready++;
-      });
-      document.getElementById(summaryId).innerHTML = `
-        <span class="summary-badge green">In Use: ${inUse}</span>
-        <span class="summary-badge red">Maintenance: ${maint}</span>
-        <span class="summary-badge blue">Ready: ${ready}</span>
-      `;
+      }
+      document.getElementById(summaryId).innerHTML =
+        '<span class="summary-badge green">In Use: ' + inUse + '</span>' +
+        '<span class="summary-badge red">Maintenance: ' + maint + '</span>' +
+        '<span class="summary-badge blue">Ready: ' + ready + '</span>';
     }
 
     // Build the boards
     function init() {
-      const state = loadState();
-      const truckBoard = document.getElementById('truck-board');
-      const trailerBoard = document.getElementById('trailer-board');
+      var state = loadState();
+      var truckBoard = document.getElementById('truck-board');
+      var trailerBoard = document.getElementById('trailer-board');
 
-      for (let i = 1; i <= TRUCK_COUNT; i++) {
-        const status = (state && state.trucks && state.trucks[i]) || 'ready';
+      for (var i = 1; i <= TRUCK_COUNT; i++) {
+        var status = (state && state.trucks && state.trucks[i]) ? state.trucks[i] : 'ready';
         truckBoard.appendChild(createCard(i, 'truck', status));
       }
 
-      for (let i = 1; i <= TRAILER_COUNT; i++) {
-        const status = (state && state.trailers && state.trailers[i]) || 'ready';
+      for (var i = 1; i <= TRAILER_COUNT; i++) {
+        var status = (state && state.trailers && state.trailers[i]) ? state.trailers[i] : 'ready';
         trailerBoard.appendChild(createCard(i, 'trailer', status));
       }
 
       updateSummaries();
 
-      // Close dropdowns when clicking anywhere outside a card
-      document.addEventListener('click', closeAllDropdowns);
+      // Click anywhere else to collapse open cards
+      document.onclick = function() {
+        collapseAll();
+      };
     }
 
     init();
