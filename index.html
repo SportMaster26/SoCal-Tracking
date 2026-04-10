@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SoCal Store - Trailer & Truck Batch Board</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,6 +23,43 @@
       letter-spacing: 1px;
     }
 
+    /* ---- Tabs ---- */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 20px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .tab-btn {
+      padding: 10px 30px;
+      background: #16213e;
+      color: #888;
+      border: 2px solid #333;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab-btn:first-child { border-radius: 8px 0 0 8px; }
+    .tab-btn:last-child { border-radius: 0 8px 8px 0; }
+
+    .tab-btn.active {
+      background: #2979ff;
+      color: #fff;
+      border-color: #2979ff;
+    }
+
+    .tab-btn:hover:not(.active) { background: #1e2d50; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ---- Legend ---- */
     .legend {
       display: flex;
       justify-content: center;
@@ -53,7 +86,7 @@
     .legend-dot.red { background: #ff1744; }
     .legend-dot.blue { background: #2979ff; }
 
-    /* API Key bar */
+    /* ---- API Key ---- */
     .api-key-bar {
       max-width: 1200px;
       margin: 0 auto 15px auto;
@@ -63,10 +96,7 @@
       flex-wrap: wrap;
     }
 
-    .api-key-bar label {
-      font-size: 0.85rem;
-      color: #aaa;
-    }
+    .api-key-bar label { font-size: 0.85rem; color: #aaa; }
 
     .api-key-bar input {
       flex: 1;
@@ -92,7 +122,7 @@
 
     .api-key-bar button:hover { opacity: 0.85; }
 
-    /* Map */
+    /* ---- Map ---- */
     .map-section {
       max-width: 1200px;
       margin: 0 auto 30px auto;
@@ -119,11 +149,9 @@
       font-size: 0.95rem;
     }
 
-    .map-placeholder {
-      text-align: center;
-      padding: 20px;
-    }
+    .map-placeholder { text-align: center; padding: 20px; }
 
+    /* ---- Board ---- */
     .section {
       max-width: 1200px;
       margin: 0 auto 40px auto;
@@ -140,7 +168,7 @@
 
     .board-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 12px;
     }
 
@@ -154,54 +182,35 @@
       user-select: none;
     }
 
-    .card.status-in-use {
-      border-color: #00c853;
-      box-shadow: 0 0 12px rgba(0, 200, 83, 0.3);
-    }
+    .card.status-in-use { border-color: #00c853; box-shadow: 0 0 12px rgba(0,200,83,0.3); }
+    .card.status-maintenance { border-color: #ff1744; box-shadow: 0 0 12px rgba(255,23,68,0.3); }
+    .card.status-ready { border-color: #2979ff; box-shadow: 0 0 12px rgba(41,121,255,0.3); }
 
-    .card.status-maintenance {
-      border-color: #ff1744;
-      box-shadow: 0 0 12px rgba(255, 23, 68, 0.3);
-    }
-
-    .card.status-ready {
-      border-color: #2979ff;
-      box-shadow: 0 0 12px rgba(41, 121, 255, 0.3);
-    }
-
-    .card-number {
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
+    .card-number { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
     .card.status-in-use .card-number { color: #00c853; }
     .card.status-maintenance .card-number { color: #ff1744; }
     .card.status-ready .card-number { color: #2979ff; }
 
     .card-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      font-size: 0.7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
     }
 
     .card.status-in-use .card-label { color: #00c853; }
     .card.status-maintenance .card-label { color: #ff1744; }
     .card.status-ready .card-label { color: #2979ff; }
 
-    .card-destination {
-      font-size: 0.65rem;
-      color: #888;
-      margin-bottom: 6px;
+    .card-meta {
+      font-size: 0.6rem;
+      color: #777;
       min-height: 14px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      margin-bottom: 2px;
     }
 
-    /* Status buttons inside each card */
+    /* Status buttons */
     .status-buttons {
       display: none;
       flex-direction: column;
@@ -209,9 +218,7 @@
       margin-top: 8px;
     }
 
-    .card.expanded .status-buttons {
-      display: flex;
-    }
+    .card.expanded .status-buttons { display: flex; }
 
     .status-btn {
       padding: 6px 8px;
@@ -225,47 +232,53 @@
     }
 
     .status-btn:hover { opacity: 0.85; }
-
     .status-btn.btn-in-use { background: #00c853; }
     .status-btn.btn-maintenance { background: #ff1744; }
     .status-btn.btn-ready { background: #2979ff; }
 
-    /* Address input inside card */
-    .address-input-wrap {
+    /* Form inside card */
+    .in-use-form {
       display: none;
+      margin-top: 8px;
+      text-align: left;
+    }
+
+    .in-use-form.visible { display: block; }
+
+    .in-use-form label {
+      display: block;
+      font-size: 0.65rem;
+      color: #aaa;
+      margin-bottom: 2px;
       margin-top: 6px;
     }
 
-    .address-input-wrap.visible {
-      display: block;
-    }
-
-    .address-input-wrap input {
+    .in-use-form input {
       width: 100%;
-      padding: 6px 8px;
+      padding: 5px 7px;
       border-radius: 5px;
       border: 1px solid #333;
       background: #0f3460;
       color: #fff;
       font-size: 0.75rem;
-      margin-bottom: 4px;
     }
 
-    .address-input-wrap button {
+    .in-use-form .submit-btn {
       width: 100%;
-      padding: 5px;
+      margin-top: 8px;
+      padding: 6px;
       border: none;
       border-radius: 5px;
       background: #00c853;
       color: #fff;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 600;
       cursor: pointer;
     }
 
-    .address-input-wrap button:hover { opacity: 0.85; }
+    .in-use-form .submit-btn:hover { opacity: 0.85; }
 
-    /* Summary counters */
+    /* Summary */
     .summary {
       display: flex;
       justify-content: center;
@@ -285,57 +298,192 @@
     .summary-badge.red { background: rgba(255,23,68,0.15); color: #ff1744; border: 1px solid #ff1744; }
     .summary-badge.blue { background: rgba(41,121,255,0.15); color: #2979ff; border: 1px solid #2979ff; }
 
+    /* ---- Calendar ---- */
+    .calendar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .cal-nav button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #16213e;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .cal-nav button:hover { background: #1e2d50; }
+
+    .cal-nav .cal-month-label {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .cal-day-header {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #888;
+      padding: 8px 0;
+    }
+
+    .cal-day {
+      background: #16213e;
+      border-radius: 8px;
+      min-height: 90px;
+      padding: 6px;
+      position: relative;
+    }
+
+    .cal-day.empty { background: transparent; }
+
+    .cal-day.today { border: 2px solid #2979ff; }
+
+    .cal-day-num {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .cal-event {
+      font-size: 0.6rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .cal-event.event-leave { background: #e65100; }
+    .cal-event.event-return { background: #00c853; }
+
+    .cal-legend {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .cal-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .cal-legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+
+    .cal-legend-dot.orange { background: #e65100; }
+    .cal-legend-dot.green { background: #00c853; }
+
     @media (max-width: 600px) {
       h1 { font-size: 1.4rem; }
       .board-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 8px;
       }
       .card { padding: 12px 8px; }
       .card-number { font-size: 1.4rem; }
       #map { height: 280px; }
+      .cal-day { min-height: 60px; }
+      .cal-event { font-size: 0.5rem; }
     }
   </style>
 </head>
 <body>
   <h1>SoCal Store - Batch Board</h1>
 
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot green"></div> In Use</div>
-    <div class="legend-item"><div class="legend-dot red"></div> Maintenance Required</div>
-    <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab-btn active" id="tab-board-btn">Board</div>
+    <div class="tab-btn" id="tab-calendar-btn">Calendar</div>
   </div>
 
-  <!-- Google Maps API Key -->
-  <div class="api-key-bar" id="api-key-bar">
-    <label>Google Maps API Key:</label>
-    <input type="text" id="api-key-input" placeholder="Paste your API key here..." />
-    <button id="api-key-save" type="button">Save & Load Map</button>
-  </div>
+  <!-- ===== BOARD TAB ===== -->
+  <div class="tab-content active" id="tab-board">
 
-  <!-- Map Section -->
-  <div class="map-section">
-    <div class="map-header">Active Deliveries Map</div>
-    <div id="map">
-      <div class="map-placeholder">Enter your Google Maps API key above to enable the map</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot green"></div> In Use</div>
+      <div class="legend-item"><div class="legend-dot red"></div> Maintenance Required</div>
+      <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
+    </div>
+
+    <div class="api-key-bar" id="api-key-bar">
+      <label>Google Maps API Key:</label>
+      <input type="text" id="api-key-input" placeholder="Paste your API key here..." />
+      <button id="api-key-save" type="button">Save & Load Map</button>
+    </div>
+
+    <div class="map-section">
+      <div class="map-header">Active Deliveries Map</div>
+      <div id="map">
+        <div class="map-placeholder">Enter your Google Maps API key above to enable the map</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">Delivery Trucks</div>
+      <div class="summary" id="truck-summary"></div>
+      <div class="board-grid" id="truck-board"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">Rental Trailers</div>
+      <div class="summary" id="trailer-summary"></div>
+      <div class="board-grid" id="trailer-board"></div>
     </div>
   </div>
 
-  <!-- Delivery Trucks Section -->
-  <div class="section">
-    <div class="section-header">Delivery Trucks</div>
-    <div class="summary" id="truck-summary"></div>
-    <div class="board-grid" id="truck-board"></div>
-  </div>
-
-  <!-- Rental Trailers Section -->
-  <div class="section">
-    <div class="section-header">Rental Trailers</div>
-    <div class="summary" id="trailer-summary"></div>
-    <div class="board-grid" id="trailer-board"></div>
+  <!-- ===== CALENDAR TAB ===== -->
+  <div class="tab-content" id="tab-calendar">
+    <div class="calendar-container">
+      <div class="cal-legend">
+        <div class="cal-legend-item"><div class="cal-legend-dot orange"></div> Leaves</div>
+        <div class="cal-legend-item"><div class="cal-legend-dot green"></div> Returns</div>
+      </div>
+      <div class="cal-nav">
+        <button id="cal-prev" type="button">&lt;</button>
+        <div class="cal-month-label" id="cal-month-label"></div>
+        <button id="cal-next" type="button">&gt;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
   </div>
 
   <script>
+    /* ==============================
+       GLOBALS
+    ============================== */
     var STATUSES = {
       'in-use':      { label: 'In Use',       cssClass: 'status-in-use' },
       'maintenance': { label: 'Maintenance',   cssClass: 'status-maintenance' },
@@ -344,7 +492,7 @@
 
     var TRUCK_COUNT = 12;
     var TRAILER_COUNT = 50;
-    var STORAGE_KEY = 'socal-batch-board';
+    var STORAGE_KEY = 'socal-batch-board-v2';
     var API_KEY_STORAGE = 'socal-gmap-key';
 
     var map = null;
@@ -352,7 +500,29 @@
     var markers = [];
     var mapsLoaded = false;
 
-    // ---- State persistence ----
+    var calYear, calMonth; // current calendar view
+
+    /* ==============================
+       TABS
+    ============================== */
+    document.getElementById('tab-board-btn').onclick = function() {
+      document.getElementById('tab-board-btn').classList.add('active');
+      document.getElementById('tab-calendar-btn').classList.remove('active');
+      document.getElementById('tab-board').classList.add('active');
+      document.getElementById('tab-calendar').classList.remove('active');
+    };
+
+    document.getElementById('tab-calendar-btn').onclick = function() {
+      document.getElementById('tab-calendar-btn').classList.add('active');
+      document.getElementById('tab-board-btn').classList.remove('active');
+      document.getElementById('tab-calendar').classList.add('active');
+      document.getElementById('tab-board').classList.remove('active');
+      renderCalendar();
+    };
+
+    /* ==============================
+       STATE
+    ============================== */
     function loadState() {
       try {
         var saved = localStorage.getItem(STORAGE_KEY);
@@ -368,7 +538,9 @@
         var c = truckCards[i];
         state.trucks[c.getAttribute('data-id')] = {
           status: c.getAttribute('data-status'),
-          dest: c.getAttribute('data-dest') || ''
+          dest: c.getAttribute('data-dest') || '',
+          leave: c.getAttribute('data-leave') || '',
+          returnDate: c.getAttribute('data-return') || ''
         };
       }
       var trailerCards = document.getElementById('trailer-board').getElementsByClassName('card');
@@ -376,13 +548,17 @@
         var c = trailerCards[i];
         state.trailers[c.getAttribute('data-id')] = {
           status: c.getAttribute('data-status'),
-          dest: c.getAttribute('data-dest') || ''
+          dest: c.getAttribute('data-dest') || '',
+          leave: c.getAttribute('data-leave') || '',
+          returnDate: c.getAttribute('data-return') || ''
         };
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
-    // ---- Google Maps ----
+    /* ==============================
+       GOOGLE MAPS
+    ============================== */
     function loadGoogleMaps(apiKey) {
       if (mapsLoaded) return;
       var script = document.createElement('script');
@@ -392,14 +568,12 @@
       document.head.appendChild(script);
     }
 
-    // Called by Google Maps script once loaded
     window.initMap = function() {
       mapsLoaded = true;
       var mapDiv = document.getElementById('map');
       mapDiv.innerHTML = '';
-
       map = new google.maps.Map(mapDiv, {
-        center: { lat: 34.0522, lng: -118.2437 }, // Los Angeles
+        center: { lat: 34.0522, lng: -118.2437 },
         zoom: 9,
         styles: [
           { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
@@ -412,25 +586,20 @@
           { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
         ]
       });
-
       geocoder = new google.maps.Geocoder();
       refreshMapMarkers();
     };
 
     function clearMarkers() {
-      for (var i = 0; i < markers.length; i++) {
-        markers[i].setMap(null);
-      }
+      for (var i = 0; i < markers.length; i++) markers[i].setMap(null);
       markers = [];
     }
 
     function refreshMapMarkers() {
       if (!map || !geocoder) return;
       clearMarkers();
-
       var allCards = document.querySelectorAll('.card[data-status="in-use"]');
       var bounds = new google.maps.LatLngBounds();
-      var hasMarkers = false;
 
       for (var i = 0; i < allCards.length; i++) {
         var card = allCards[i];
@@ -443,124 +612,125 @@
               var pos = results[0].geometry.location;
               var type = cardRef.getAttribute('data-type');
               var id = cardRef.getAttribute('data-id');
-              var label = (type === 'truck' ? 'Truck ' : 'Trailer ') + id;
+              var lbl = (type === 'truck' ? 'Truck ' : 'Trailer ') + id;
+              var leave = cardRef.getAttribute('data-leave') || 'N/A';
+              var ret = cardRef.getAttribute('data-return') || 'N/A';
 
               var marker = new google.maps.Marker({
-                map: map,
-                position: pos,
-                title: label + ' - ' + address,
+                map: map, position: pos,
+                title: lbl + ' - ' + address,
                 label: { text: String(id), color: '#fff', fontWeight: '700' },
                 icon: {
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: 14,
+                  path: google.maps.SymbolPath.CIRCLE, scale: 14,
                   fillColor: type === 'truck' ? '#00c853' : '#00e676',
-                  fillOpacity: 1,
-                  strokeColor: '#fff',
-                  strokeWeight: 2
+                  fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2
                 }
               });
 
               var infoWindow = new google.maps.InfoWindow({
-                content: '<div style="color:#222;font-size:14px;"><strong>' + label + '</strong><br>' + address + '</div>'
+                content: '<div style="color:#222;font-size:13px;"><strong>' + lbl + '</strong><br>' +
+                  address + '<br><span style="font-size:11px;">Leave: ' + formatDateDisplay(leave) +
+                  '<br>Return: ' + formatDateDisplay(ret) + '</span></div>'
               });
 
-              marker.addListener('click', function() {
-                infoWindow.open(map, marker);
-              });
-
+              marker.addListener('click', function() { infoWindow.open(map, marker); });
               markers.push(marker);
               bounds.extend(pos);
 
-              // Fit map to show all markers
-              if (markers.length === 1) {
-                map.setCenter(pos);
-                map.setZoom(12);
-              } else {
-                map.fitBounds(bounds);
-              }
+              if (markers.length === 1) { map.setCenter(pos); map.setZoom(12); }
+              else { map.fitBounds(bounds); }
             }
           });
         })(card, dest);
       }
     }
 
-    // ---- Card logic ----
-    function setCardStatus(card, status, dest) {
+    /* ==============================
+       CARD LOGIC
+    ============================== */
+    function formatDateDisplay(val) {
+      if (!val) return '';
+      var d = new Date(val);
+      if (isNaN(d.getTime())) return val;
+      return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
+        d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function setCardStatus(card, status, dest, leave, returnDate) {
       card.classList.remove('status-in-use', 'status-maintenance', 'status-ready');
       card.classList.add(STATUSES[status].cssClass);
       card.setAttribute('data-status', status);
       card.querySelector('.card-label').textContent = STATUSES[status].label;
 
-      var destDiv = card.querySelector('.card-destination');
-      if (status === 'in-use' && dest) {
-        card.setAttribute('data-dest', dest);
-        destDiv.textContent = dest;
-      } else if (status !== 'in-use') {
+      var destDiv = card.querySelector('.card-dest');
+      var leaveDiv = card.querySelector('.card-leave');
+      var returnDiv = card.querySelector('.card-return');
+
+      if (status === 'in-use') {
+        card.setAttribute('data-dest', dest || '');
+        card.setAttribute('data-leave', leave || '');
+        card.setAttribute('data-return', returnDate || '');
+        destDiv.textContent = dest ? dest : '';
+        leaveDiv.textContent = leave ? 'Out: ' + formatDateDisplay(leave) : '';
+        returnDiv.textContent = returnDate ? 'Back: ' + formatDateDisplay(returnDate) : '';
+      } else {
         card.setAttribute('data-dest', '');
+        card.setAttribute('data-leave', '');
+        card.setAttribute('data-return', '');
         destDiv.textContent = '';
+        leaveDiv.textContent = '';
+        returnDiv.textContent = '';
       }
 
       card.classList.remove('expanded');
-      card.querySelector('.address-input-wrap').classList.remove('visible');
+      card.querySelector('.in-use-form').classList.remove('visible');
     }
 
     function collapseAll() {
       var expanded = document.querySelectorAll('.card.expanded');
       for (var i = 0; i < expanded.length; i++) {
         expanded[i].classList.remove('expanded');
-        expanded[i].querySelector('.address-input-wrap').classList.remove('visible');
+        expanded[i].querySelector('.in-use-form').classList.remove('visible');
       }
     }
 
-    function createCard(id, type, initialStatus, initialDest) {
+    function createCard(id, type, initialStatus, initialDest, initialLeave, initialReturn) {
       var card = document.createElement('div');
       card.className = 'card ' + STATUSES[initialStatus].cssClass;
       card.setAttribute('data-id', id);
       card.setAttribute('data-type', type);
       card.setAttribute('data-status', initialStatus);
       card.setAttribute('data-dest', initialDest || '');
+      card.setAttribute('data-leave', initialLeave || '');
+      card.setAttribute('data-return', initialReturn || '');
 
+      // Number
       var numberDiv = document.createElement('div');
       numberDiv.className = 'card-number';
       numberDiv.textContent = id;
 
+      // Status label
       var labelDiv = document.createElement('div');
       labelDiv.className = 'card-label';
       labelDiv.textContent = STATUSES[initialStatus].label;
 
+      // Meta lines
       var destDiv = document.createElement('div');
-      destDiv.className = 'card-destination';
+      destDiv.className = 'card-meta card-dest';
       destDiv.textContent = (initialStatus === 'in-use' && initialDest) ? initialDest : '';
 
+      var leaveDiv = document.createElement('div');
+      leaveDiv.className = 'card-meta card-leave';
+      leaveDiv.textContent = (initialStatus === 'in-use' && initialLeave) ? 'Out: ' + formatDateDisplay(initialLeave) : '';
+
+      var returnDiv = document.createElement('div');
+      returnDiv.className = 'card-meta card-return';
+      returnDiv.textContent = (initialStatus === 'in-use' && initialReturn) ? 'Back: ' + formatDateDisplay(initialReturn) : '';
+
+      // Status buttons
       var btnContainer = document.createElement('div');
       btnContainer.className = 'status-buttons';
 
-      // Address input (shown when "In Use" is clicked)
-      var addrWrap = document.createElement('div');
-      addrWrap.className = 'address-input-wrap';
-
-      var addrInput = document.createElement('input');
-      addrInput.setAttribute('type', 'text');
-      addrInput.setAttribute('placeholder', 'Enter destination address...');
-      addrInput.onclick = function(e) { e.stopPropagation(); };
-
-      var addrBtn = document.createElement('button');
-      addrBtn.setAttribute('type', 'button');
-      addrBtn.textContent = 'Set Destination & Send';
-      addrBtn.onclick = function(e) {
-        e.stopPropagation();
-        var address = addrInput.value.trim();
-        setCardStatus(card, 'in-use', address);
-        addrInput.value = '';
-        saveState();
-        updateSummaries();
-        refreshMapMarkers();
-      };
-
-      addrWrap.appendChild(addrInput);
-      addrWrap.appendChild(addrBtn);
-
-      // Status buttons
       var btnInUse = document.createElement('button');
       btnInUse.className = 'status-btn btn-in-use';
       btnInUse.textContent = 'In Use';
@@ -576,16 +746,63 @@
       btnReady.textContent = 'Ready';
       btnReady.setAttribute('type', 'button');
 
+      // In-use form
+      var form = document.createElement('div');
+      form.className = 'in-use-form';
+
+      var lbl1 = document.createElement('label');
+      lbl1.textContent = 'Destination';
+      var inp1 = document.createElement('input');
+      inp1.setAttribute('type', 'text');
+      inp1.setAttribute('placeholder', 'Enter address...');
+      inp1.onclick = function(e) { e.stopPropagation(); };
+
+      var lbl2 = document.createElement('label');
+      lbl2.textContent = 'Leave Date & Time';
+      var inp2 = document.createElement('input');
+      inp2.setAttribute('type', 'datetime-local');
+      inp2.onclick = function(e) { e.stopPropagation(); };
+
+      var lbl3 = document.createElement('label');
+      lbl3.textContent = 'Expected Return Date & Time';
+      var inp3 = document.createElement('input');
+      inp3.setAttribute('type', 'datetime-local');
+      inp3.onclick = function(e) { e.stopPropagation(); };
+
+      var submitBtn = document.createElement('button');
+      submitBtn.className = 'submit-btn';
+      submitBtn.setAttribute('type', 'button');
+      submitBtn.textContent = 'Set & Send Out';
+      submitBtn.onclick = function(e) {
+        e.stopPropagation();
+        var dest = inp1.value.trim();
+        var leave = inp2.value;
+        var ret = inp3.value;
+        setCardStatus(card, 'in-use', dest, leave, ret);
+        inp1.value = ''; inp2.value = ''; inp3.value = '';
+        saveState();
+        updateSummaries();
+        refreshMapMarkers();
+      };
+
+      form.appendChild(lbl1);
+      form.appendChild(inp1);
+      form.appendChild(lbl2);
+      form.appendChild(inp2);
+      form.appendChild(lbl3);
+      form.appendChild(inp3);
+      form.appendChild(submitBtn);
+
+      // Button handlers
       btnInUse.onclick = function(e) {
         e.stopPropagation();
-        // Show address input instead of immediately setting status
-        addrWrap.classList.add('visible');
-        addrInput.focus();
+        form.classList.add('visible');
+        inp1.focus();
       };
 
       btnMaint.onclick = function(e) {
         e.stopPropagation();
-        setCardStatus(card, 'maintenance', '');
+        setCardStatus(card, 'maintenance', '', '', '');
         saveState();
         updateSummaries();
         refreshMapMarkers();
@@ -593,7 +810,7 @@
 
       btnReady.onclick = function(e) {
         e.stopPropagation();
-        setCardStatus(card, 'ready', '');
+        setCardStatus(card, 'ready', '', '', '');
         saveState();
         updateSummaries();
         refreshMapMarkers();
@@ -606,8 +823,10 @@
       card.appendChild(numberDiv);
       card.appendChild(labelDiv);
       card.appendChild(destDiv);
+      card.appendChild(leaveDiv);
+      card.appendChild(returnDiv);
       card.appendChild(btnContainer);
-      card.appendChild(addrWrap);
+      card.appendChild(form);
 
       card.onclick = function(e) {
         e.stopPropagation();
@@ -621,6 +840,9 @@
       return card;
     }
 
+    /* ==============================
+       SUMMARIES
+    ============================== */
     function updateSummaries() {
       updateSummary('truck-board', 'truck-summary');
       updateSummary('trailer-board', 'trailer-summary');
@@ -641,7 +863,132 @@
         '<span class="summary-badge blue">Ready: ' + ready + '</span>';
     }
 
-    // ---- Init ----
+    /* ==============================
+       CALENDAR
+    ============================== */
+    var MONTH_NAMES = ['January','February','March','April','May','June',
+      'July','August','September','October','November','December'];
+    var DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    function getAllEvents() {
+      var events = [];
+      var allCards = document.querySelectorAll('.card[data-status="in-use"]');
+      for (var i = 0; i < allCards.length; i++) {
+        var c = allCards[i];
+        var type = c.getAttribute('data-type');
+        var id = c.getAttribute('data-id');
+        var dest = c.getAttribute('data-dest') || '';
+        var leave = c.getAttribute('data-leave');
+        var ret = c.getAttribute('data-return');
+        var label = (type === 'truck' ? 'T' : 'Tr') + id;
+
+        if (leave) {
+          events.push({
+            date: leave.split('T')[0],
+            type: 'leave',
+            label: label + ' out',
+            dest: dest
+          });
+        }
+        if (ret) {
+          events.push({
+            date: ret.split('T')[0],
+            type: 'return',
+            label: label + ' back',
+            dest: dest
+          });
+        }
+      }
+      return events;
+    }
+
+    function renderCalendar() {
+      var grid = document.getElementById('cal-grid');
+      grid.innerHTML = '';
+
+      document.getElementById('cal-month-label').textContent =
+        MONTH_NAMES[calMonth] + ' ' + calYear;
+
+      // Day headers
+      for (var d = 0; d < 7; d++) {
+        var hdr = document.createElement('div');
+        hdr.className = 'cal-day-header';
+        hdr.textContent = DAY_NAMES[d];
+        grid.appendChild(hdr);
+      }
+
+      var firstDay = new Date(calYear, calMonth, 1).getDay();
+      var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+      var today = new Date();
+      var todayStr = today.getFullYear() + '-' +
+        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        String(today.getDate()).padStart(2, '0');
+
+      var events = getAllEvents();
+
+      // Build lookup: dateStr -> [events]
+      var eventMap = {};
+      for (var i = 0; i < events.length; i++) {
+        var key = events[i].date;
+        if (!eventMap[key]) eventMap[key] = [];
+        eventMap[key].push(events[i]);
+      }
+
+      // Empty cells before 1st
+      for (var i = 0; i < firstDay; i++) {
+        var empty = document.createElement('div');
+        empty.className = 'cal-day empty';
+        grid.appendChild(empty);
+      }
+
+      // Days
+      for (var day = 1; day <= daysInMonth; day++) {
+        var cell = document.createElement('div');
+        cell.className = 'cal-day';
+
+        var dateStr = calYear + '-' +
+          String(calMonth + 1).padStart(2, '0') + '-' +
+          String(day).padStart(2, '0');
+
+        if (dateStr === todayStr) cell.classList.add('today');
+
+        var numDiv = document.createElement('div');
+        numDiv.className = 'cal-day-num';
+        numDiv.textContent = day;
+        cell.appendChild(numDiv);
+
+        // Events for this day
+        var dayEvents = eventMap[dateStr];
+        if (dayEvents) {
+          for (var j = 0; j < dayEvents.length; j++) {
+            var ev = document.createElement('div');
+            ev.className = 'cal-event ' + (dayEvents[j].type === 'leave' ? 'event-leave' : 'event-return');
+            ev.textContent = dayEvents[j].label;
+            ev.title = dayEvents[j].dest;
+            cell.appendChild(ev);
+          }
+        }
+
+        grid.appendChild(cell);
+      }
+    }
+
+    document.getElementById('cal-prev').onclick = function() {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    };
+
+    document.getElementById('cal-next').onclick = function() {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendar();
+    };
+
+    /* ==============================
+       INIT
+    ============================== */
     function init() {
       var state = loadState();
       var truckBoard = document.getElementById('truck-board');
@@ -649,42 +996,45 @@
 
       for (var i = 1; i <= TRUCK_COUNT; i++) {
         var saved = (state && state.trucks && state.trucks[i]) ? state.trucks[i] : null;
-        var status = saved ? (saved.status || saved) : 'ready';
+        var status = saved ? (saved.status || 'ready') : 'ready';
         var dest = saved ? (saved.dest || '') : '';
-        truckBoard.appendChild(createCard(i, 'truck', status, dest));
+        var leave = saved ? (saved.leave || '') : '';
+        var ret = saved ? (saved.returnDate || '') : '';
+        truckBoard.appendChild(createCard(i, 'truck', status, dest, leave, ret));
       }
 
       for (var i = 1; i <= TRAILER_COUNT; i++) {
         var saved = (state && state.trailers && state.trailers[i]) ? state.trailers[i] : null;
-        var status = saved ? (saved.status || saved) : 'ready';
+        var status = saved ? (saved.status || 'ready') : 'ready';
         var dest = saved ? (saved.dest || '') : '';
-        trailerBoard.appendChild(createCard(i, 'trailer', status, dest));
+        var leave = saved ? (saved.leave || '') : '';
+        var ret = saved ? (saved.returnDate || '') : '';
+        trailerBoard.appendChild(createCard(i, 'trailer', status, dest, leave, ret));
       }
 
       updateSummaries();
 
-      document.onclick = function() {
-        collapseAll();
-      };
+      // Calendar default month
+      var now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
 
-      // Load saved API key
+      document.onclick = function() { collapseAll(); };
+
+      // API key
       var savedKey = localStorage.getItem(API_KEY_STORAGE);
       if (savedKey) {
         document.getElementById('api-key-input').value = savedKey;
         loadGoogleMaps(savedKey);
       }
 
-      // Save API key button
       document.getElementById('api-key-save').onclick = function(e) {
         e.stopPropagation();
         var key = document.getElementById('api-key-input').value.trim();
         if (key) {
           localStorage.setItem(API_KEY_STORAGE, key);
-          if (!mapsLoaded) {
-            loadGoogleMaps(key);
-          } else {
-            refreshMapMarkers();
-          }
+          if (!mapsLoaded) loadGoogleMaps(key);
+          else refreshMapMarkers();
         }
       };
     }
