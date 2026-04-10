@@ -202,19 +202,8 @@
     .summary-badge.red { background: rgba(255,23,68,0.15); color: #ff1744; border: 1px solid #ff1744; }
     .summary-badge.blue { background: rgba(41,121,255,0.15); color: #2979ff; border: 1px solid #2979ff; }
 
-    /* Overlay to close dropdowns */
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 50;
-    }
-
-    .overlay.active {
-      display: block;
+    .card.dropdown-open {
+      z-index: 200;
     }
 
     @media (max-width: 600px) {
@@ -251,8 +240,6 @@
     <div class="board-grid" id="trailer-board"></div>
   </div>
 
-  <!-- Overlay to close any open dropdown -->
-  <div class="overlay" id="overlay"></div>
 
   <script>
     const STATUSES = {
@@ -305,22 +292,26 @@
       `;
 
       card.addEventListener('click', function (e) {
+        e.stopPropagation();
+
         // If clicking a dropdown option
-        if (e.target.classList.contains('dropdown-option')) {
-          const newStatus = e.target.dataset.status;
+        const option = e.target.closest('.dropdown-option');
+        if (option) {
+          const newStatus = option.dataset.status;
           setCardStatus(card, newStatus);
           closeAllDropdowns();
           saveState();
           updateSummaries();
           return;
         }
+
         // Otherwise toggle dropdown
-        e.stopPropagation();
-        const wasOpen = card.querySelector('.dropdown').classList.contains('open');
+        const dropdown = card.querySelector('.dropdown');
+        const wasOpen = dropdown.classList.contains('open');
         closeAllDropdowns();
         if (!wasOpen) {
-          card.querySelector('.dropdown').classList.add('open');
-          document.getElementById('overlay').classList.add('active');
+          dropdown.classList.add('open');
+          card.classList.add('dropdown-open');
         }
       });
 
@@ -338,7 +329,7 @@
 
     function closeAllDropdowns() {
       document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
-      document.getElementById('overlay').classList.remove('active');
+      document.querySelectorAll('.card.dropdown-open').forEach(c => c.classList.remove('dropdown-open'));
     }
 
     function updateSummaries() {
@@ -379,8 +370,8 @@
 
       updateSummaries();
 
-      // Close dropdowns when clicking overlay
-      document.getElementById('overlay').addEventListener('click', closeAllDropdowns);
+      // Close dropdowns when clicking anywhere outside a card
+      document.addEventListener('click', closeAllDropdowns);
     }
 
     init();
