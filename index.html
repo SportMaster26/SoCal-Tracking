@@ -78,6 +78,7 @@
 
     .legend-dot { width: 16px; height: 16px; border-radius: 50%; }
     .legend-dot.green { background: #00c853; }
+    .legend-dot.yellow { background: #ffd600; }
     .legend-dot.red { background: #ff1744; }
     .legend-dot.blue { background: #2979ff; }
 
@@ -144,11 +145,13 @@
     }
 
     .card.status-in-use { border-color: #00c853; box-shadow: 0 0 12px rgba(0,200,83,0.3); }
+    .card.status-scheduled { border-color: #ffd600; box-shadow: 0 0 12px rgba(255,214,0,0.3); }
     .card.status-maintenance { border-color: #ff1744; box-shadow: 0 0 12px rgba(255,23,68,0.3); }
     .card.status-ready { border-color: #2979ff; box-shadow: 0 0 12px rgba(41,121,255,0.3); }
 
     .card-number { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
     .card.status-in-use .card-number { color: #00c853; }
+    .card.status-scheduled .card-number { color: #ffd600; }
     .card.status-maintenance .card-number { color: #ff1744; }
     .card.status-ready .card-number { color: #2979ff; }
 
@@ -158,6 +161,7 @@
     }
 
     .card.status-in-use .card-label { color: #00c853; }
+    .card.status-scheduled .card-label { color: #ffd600; }
     .card.status-maintenance .card-label { color: #ff1744; }
     .card.status-ready .card-label { color: #2979ff; }
 
@@ -270,6 +274,7 @@
     }
 
     .summary-badge.green { background: rgba(0,200,83,0.15); color: #00c853; border: 1px solid #00c853; }
+    .summary-badge.yellow { background: rgba(255,214,0,0.15); color: #ffd600; border: 1px solid #ffd600; }
     .summary-badge.red { background: rgba(255,23,68,0.15); color: #ff1744; border: 1px solid #ff1744; }
     .summary-badge.blue { background: rgba(41,121,255,0.15); color: #2979ff; border: 1px solid #2979ff; }
 
@@ -362,7 +367,8 @@
   <!-- ===== BOARD TAB ===== -->
   <div class="tab-content active" id="tab-board">
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot green"></div> In Use</div>
+      <div class="legend-item"><div class="legend-dot green"></div> Currently Out</div>
+      <div class="legend-item"><div class="legend-dot yellow"></div> Scheduled</div>
       <div class="legend-item"><div class="legend-dot red"></div> Maintenance Required</div>
       <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
     </div>
@@ -437,9 +443,10 @@
        GLOBALS
     ============================== */
     var STATUSES = {
-      'in-use':      { label: 'In Use',       cssClass: 'status-in-use' },
-      'maintenance': { label: 'Maintenance',   cssClass: 'status-maintenance' },
-      'ready':       { label: 'Ready',          cssClass: 'status-ready' }
+      'in-use':      { label: 'Currently Out', cssClass: 'status-in-use' },
+      'scheduled':   { label: 'Scheduled',      cssClass: 'status-scheduled' },
+      'maintenance': { label: 'Maintenance',    cssClass: 'status-maintenance' },
+      'ready':       { label: 'Ready',           cssClass: 'status-ready' }
     };
 
     var TRUCK_COUNT = 12;
@@ -550,7 +557,7 @@
     function refreshMapMarkers() {
       if (!map || !geocoder) return;
       clearMarkers();
-      var allCards = document.querySelectorAll('.card[data-status="in-use"]');
+      var allCards = document.querySelectorAll('.card[data-status="in-use"], .card[data-status="scheduled"]');
       var bounds = new google.maps.LatLngBounds();
 
       for (var i = 0; i < allCards.length; i++) {
@@ -653,17 +660,40 @@
         d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    function isLeaveToday(leaveVal) {
+      if (!leaveVal) return true; // no date set, assume currently out
+      var now = new Date();
+      var todayStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+      var leaveDate = leaveVal.split('T')[0];
+      return leaveDate <= todayStr;
+    }
+
+    function resolveOutStatus(leaveVal) {
+      // If leave date is today or in the past -> currently out (green)
+      // If leave date is in the future -> scheduled (yellow)
+      return isLeaveToday(leaveVal) ? 'in-use' : 'scheduled';
+    }
+
     function setCardStatus(card, status, dest, leave, returnDate) {
-      card.classList.remove('status-in-use', 'status-maintenance', 'status-ready');
-      card.classList.add(STATUSES[status].cssClass);
-      card.setAttribute('data-status', status);
-      card.querySelector('.card-label').textContent = STATUSES[status].label;
+      card.classList.remove('status-in-use', 'status-scheduled', 'status-maintenance', 'status-ready');
+
+      // For sent-out items, determine green vs yellow based on leave date
+      var finalStatus = status;
+      if (status === 'in-use' || status === 'scheduled') {
+        finalStatus = resolveOutStatus(leave);
+      }
+
+      card.classList.add(STATUSES[finalStatus].cssClass);
+      card.setAttribute('data-status', finalStatus);
+      card.querySelector('.card-label').textContent = STATUSES[finalStatus].label;
 
       var destDiv = card.querySelector('.card-dest');
       var leaveDiv = card.querySelector('.card-leave');
       var returnDiv = card.querySelector('.card-return');
 
-      if (status === 'in-use') {
+      if (finalStatus === 'in-use' || finalStatus === 'scheduled') {
         card.setAttribute('data-dest', dest || '');
         card.setAttribute('data-leave', leave || '');
         card.setAttribute('data-return', returnDate || '');
@@ -793,15 +823,17 @@
 
     function updateSummary(boardId, summaryId) {
       var cards = document.getElementById(boardId).getElementsByClassName('card');
-      var inUse = 0, maint = 0, ready = 0;
+      var inUse = 0, scheduled = 0, maint = 0, ready = 0;
       for (var i = 0; i < cards.length; i++) {
         var s = cards[i].getAttribute('data-status');
         if (s === 'in-use') inUse++;
+        else if (s === 'scheduled') scheduled++;
         else if (s === 'maintenance') maint++;
         else ready++;
       }
       document.getElementById(summaryId).innerHTML =
-        '<span class="summary-badge green">In Use: ' + inUse + '</span>' +
+        '<span class="summary-badge green">Out: ' + inUse + '</span>' +
+        '<span class="summary-badge yellow">Scheduled: ' + scheduled + '</span>' +
         '<span class="summary-badge red">Maintenance: ' + maint + '</span>' +
         '<span class="summary-badge blue">Ready: ' + ready + '</span>';
     }
@@ -815,7 +847,7 @@
 
     function getAllEvents() {
       var events = [];
-      var allCards = document.querySelectorAll('.card[data-status="in-use"]');
+      var allCards = document.querySelectorAll('.card[data-status="in-use"], .card[data-status="scheduled"]');
       for (var i = 0; i < allCards.length; i++) {
         var c = allCards[i];
         var type = c.getAttribute('data-type');
@@ -927,6 +959,10 @@
         var dest = saved ? (saved.dest || '') : '';
         var leave = saved ? (saved.leave || '') : '';
         var ret = saved ? (saved.returnDate || '') : '';
+        // Re-resolve scheduled vs in-use based on today's date
+        if (status === 'in-use' || status === 'scheduled') {
+          status = resolveOutStatus(leave);
+        }
         truckBoard.appendChild(createCard(i, 'truck', status, dest, leave, ret));
       }
 
@@ -936,6 +972,10 @@
         var dest = saved ? (saved.dest || '') : '';
         var leave = saved ? (saved.leave || '') : '';
         var ret = saved ? (saved.returnDate || '') : '';
+        // Re-resolve scheduled vs in-use based on today's date
+        if (status === 'in-use' || status === 'scheduled') {
+          status = resolveOutStatus(leave);
+        }
         trailerBoard.appendChild(createCard(i, 'trailer', status, dest, leave, ret));
       }
 
