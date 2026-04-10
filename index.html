@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SoCal Store - Trailer & Truck Batch Board</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -82,32 +84,6 @@
     .legend-dot.red { background: #ff1744; }
     .legend-dot.blue { background: #2979ff; }
 
-    /* ---- API Key ---- */
-    .api-key-bar {
-      max-width: 1200px;
-      margin: 0 auto 15px auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .api-key-bar label { font-size: 0.85rem; color: #aaa; }
-
-    .api-key-bar input {
-      flex: 1; min-width: 200px; padding: 8px 12px;
-      border-radius: 6px; border: 1px solid #333;
-      background: #16213e; color: #fff; font-size: 0.85rem;
-    }
-
-    .api-key-bar button {
-      padding: 8px 16px; border-radius: 6px; border: none;
-      background: #00c853; color: #fff; font-weight: 600;
-      font-size: 0.85rem; cursor: pointer;
-    }
-
-    .api-key-bar button:hover { opacity: 0.85; }
-
     /* ---- Map ---- */
     .map-section { max-width: 1200px; margin: 0 auto 30px auto; }
 
@@ -118,11 +94,8 @@
 
     #map {
       width: 100%; height: 400px; border-radius: 10px;
-      background: #16213e; display: flex; align-items: center;
-      justify-content: center; color: #555; font-size: 0.95rem;
+      background: #16213e;
     }
-
-    .map-placeholder { text-align: center; padding: 20px; }
 
     /* ---- Board ---- */
     .section { max-width: 1200px; margin: 0 auto 40px auto; }
@@ -373,17 +346,9 @@
       <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
     </div>
 
-    <div class="api-key-bar">
-      <label>Google Maps API Key:</label>
-      <input type="text" id="api-key-input" placeholder="Paste your API key here..." />
-      <button id="api-key-save" type="button">Save & Load Map</button>
-    </div>
-
     <div class="map-section">
       <div class="map-header">Active Deliveries Map</div>
-      <div id="map">
-        <div class="map-placeholder">Enter your Google Maps API key above to enable the map</div>
-      </div>
+      <div id="map"></div>
     </div>
 
     <div class="section">
@@ -452,14 +417,11 @@
     var TRUCK_COUNT = 12;
     var TRAILER_COUNT = 50;
     var STORAGE_KEY = 'socal-batch-board-v2';
-    var API_KEY_STORAGE = 'socal-gmap-key';
 
     var map = null;
-    var geocoder = null;
-    var markers = [];
-    var mapsLoaded = false;
+    var mapMarkers = [];
     var calYear, calMonth;
-    var activeModalCard = null; // which card the modal is for
+    var activeModalCard = null;
 
     /* ==============================
        TABS
@@ -516,94 +478,90 @@
     }
 
     /* ==============================
-       GOOGLE MAPS
+       LEAFLET MAP (free, no API key)
     ============================== */
-    function loadGoogleMaps(apiKey) {
-      if (mapsLoaded) return;
-      var script = document.createElement('script');
-      script.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey + '&callback=initMap';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+    function initMap() {
+      map = L.map('map').setView([34.0522, -118.2437], 9);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        maxZoom: 19
+      }).addTo(map);
     }
 
-    window.initMap = function() {
-      mapsLoaded = true;
-      var mapDiv = document.getElementById('map');
-      mapDiv.innerHTML = '';
-      map = new google.maps.Map(mapDiv, {
-        center: { lat: 34.0522, lng: -118.2437 },
-        zoom: 9,
-        styles: [
-          { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c3e6b' }] },
-          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
-          { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
-          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
-        ]
-      });
-      geocoder = new google.maps.Geocoder();
-      refreshMapMarkers();
-    };
-
     function clearMarkers() {
-      for (var i = 0; i < markers.length; i++) markers[i].setMap(null);
-      markers = [];
+      for (var i = 0; i < mapMarkers.length; i++) {
+        map.removeLayer(mapMarkers[i]);
+      }
+      mapMarkers = [];
     }
 
     function refreshMapMarkers() {
-      if (!map || !geocoder) return;
+      if (!map) return;
       clearMarkers();
       var allCards = document.querySelectorAll('.card[data-status="in-use"], .card[data-status="scheduled"]');
-      var bounds = new google.maps.LatLngBounds();
+      var geocodeQueue = [];
 
       for (var i = 0; i < allCards.length; i++) {
         var card = allCards[i];
         var dest = card.getAttribute('data-dest');
         if (!dest) continue;
+        geocodeQueue.push(card);
+      }
 
-        (function(cardRef, address) {
-          geocoder.geocode({ address: address }, function(results, status) {
-            if (status === 'OK' && results[0]) {
-              var pos = results[0].geometry.location;
-              var type = cardRef.getAttribute('data-type');
-              var id = cardRef.getAttribute('data-id');
-              var lbl = (type === 'truck' ? 'Truck ' : 'Trailer ') + id;
-              var leave = cardRef.getAttribute('data-leave') || 'N/A';
-              var ret = cardRef.getAttribute('data-return') || 'N/A';
+      if (geocodeQueue.length === 0) return;
 
-              var cardStatus = cardRef.getAttribute('data-status');
-              var pinColor = cardStatus === 'scheduled' ? '#ffd600' : '#00c853';
+      var bounds = [];
+      var pending = geocodeQueue.length;
 
-              var marker = new google.maps.Marker({
-                map: map, position: pos,
-                title: lbl + ' - ' + address,
-                label: { text: String(id), color: cardStatus === 'scheduled' ? '#000' : '#fff', fontWeight: '700' },
-                icon: {
-                  path: google.maps.SymbolPath.CIRCLE, scale: 14,
-                  fillColor: pinColor,
-                  fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2
-                }
-              });
+      for (var i = 0; i < geocodeQueue.length; i++) {
+        (function(cardRef) {
+          var address = cardRef.getAttribute('data-dest');
+          var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
 
-              var infoWindow = new google.maps.InfoWindow({
-                content: '<div style="color:#222;font-size:13px;"><strong>' + lbl + '</strong><br>' +
+          fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data && data.length > 0) {
+                var lat = parseFloat(data[0].lat);
+                var lon = parseFloat(data[0].lon);
+                var type = cardRef.getAttribute('data-type');
+                var id = cardRef.getAttribute('data-id');
+                var lbl = (type === 'truck' ? 'Truck ' : 'Trailer ') + id;
+                var leave = cardRef.getAttribute('data-leave') || 'N/A';
+                var ret = cardRef.getAttribute('data-return') || 'N/A';
+                var cardStatus = cardRef.getAttribute('data-status');
+                var pinColor = cardStatus === 'scheduled' ? '#ffd600' : '#00c853';
+                var textColor = cardStatus === 'scheduled' ? '#000' : '#fff';
+
+                var icon = L.divIcon({
+                  className: '',
+                  html: '<div style="background:' + pinColor + ';width:28px;height:28px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:' + textColor + ';">' + id + '</div>',
+                  iconSize: [28, 28],
+                  iconAnchor: [14, 14]
+                });
+
+                var marker = L.marker([lat, lon], { icon: icon }).addTo(map);
+                marker.bindPopup(
+                  '<div style="font-size:13px;"><strong>' + lbl + '</strong><br>' +
                   address + '<br><span style="font-size:11px;">Leave: ' + formatDateDisplay(leave) +
                   '<br>Return: ' + formatDateDisplay(ret) + '</span></div>'
-              });
+                );
 
-              marker.addListener('click', function() { infoWindow.open(map, marker); });
-              markers.push(marker);
-              bounds.extend(pos);
+                mapMarkers.push(marker);
+                bounds.push([lat, lon]);
+              }
 
-              if (markers.length === 1) { map.setCenter(pos); map.setZoom(12); }
-              else { map.fitBounds(bounds); }
-            }
-          });
-        })(card, dest);
+              pending--;
+              if (pending === 0 && bounds.length > 0) {
+                if (bounds.length === 1) {
+                  map.setView(bounds[0], 12);
+                } else {
+                  map.fitBounds(bounds, { padding: [30, 30] });
+                }
+              }
+            })
+            .catch(function() { pending--; });
+        })(geocodeQueue[i]);
       }
     }
 
@@ -990,21 +948,8 @@
 
       document.onclick = function() { collapseAll(); };
 
-      var savedKey = localStorage.getItem(API_KEY_STORAGE);
-      if (savedKey) {
-        document.getElementById('api-key-input').value = savedKey;
-        loadGoogleMaps(savedKey);
-      }
-
-      document.getElementById('api-key-save').onclick = function(e) {
-        e.stopPropagation();
-        var key = document.getElementById('api-key-input').value.trim();
-        if (key) {
-          localStorage.setItem(API_KEY_STORAGE, key);
-          if (!mapsLoaded) loadGoogleMaps(key);
-          else refreshMapMarkers();
-        }
-      };
+      initMap();
+      refreshMapMarkers();
     }
 
     init();
