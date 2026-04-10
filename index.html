@@ -575,13 +575,16 @@
               var leave = cardRef.getAttribute('data-leave') || 'N/A';
               var ret = cardRef.getAttribute('data-return') || 'N/A';
 
+              var cardStatus = cardRef.getAttribute('data-status');
+              var pinColor = cardStatus === 'scheduled' ? '#ffd600' : '#00c853';
+
               var marker = new google.maps.Marker({
                 map: map, position: pos,
                 title: lbl + ' - ' + address,
-                label: { text: String(id), color: '#fff', fontWeight: '700' },
+                label: { text: String(id), color: cardStatus === 'scheduled' ? '#000' : '#fff', fontWeight: '700' },
                 icon: {
                   path: google.maps.SymbolPath.CIRCLE, scale: 14,
-                  fillColor: type === 'truck' ? '#00c853' : '#00e676',
+                  fillColor: pinColor,
                   fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2
                 }
               });
