@@ -31,7 +31,7 @@
       display: flex;
       justify-content: center;
       gap: 30px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
 
@@ -53,6 +53,77 @@
     .legend-dot.red { background: #ff1744; }
     .legend-dot.blue { background: #2979ff; }
 
+    /* API Key bar */
+    .api-key-bar {
+      max-width: 1200px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .api-key-bar label {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .api-key-bar input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #16213e;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+
+    .api-key-bar button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      background: #00c853;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .api-key-bar button:hover { opacity: 0.85; }
+
+    /* Map */
+    .map-section {
+      max-width: 1200px;
+      margin: 0 auto 30px auto;
+    }
+
+    .map-header {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #333;
+      color: #e0e0e0;
+    }
+
+    #map {
+      width: 100%;
+      height: 400px;
+      border-radius: 10px;
+      background: #16213e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .map-placeholder {
+      text-align: center;
+      padding: 20px;
+    }
+
     .section {
       max-width: 1200px;
       margin: 0 auto 40px auto;
@@ -69,7 +140,7 @@
 
     .board-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
       gap: 12px;
     }
 
@@ -83,7 +154,6 @@
       user-select: none;
     }
 
-    /* Status border colors */
     .card.status-in-use {
       border-color: #00c853;
       box-shadow: 0 0 12px rgba(0, 200, 83, 0.3);
@@ -114,12 +184,22 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .card.status-in-use .card-label { color: #00c853; }
     .card.status-maintenance .card-label { color: #ff1744; }
     .card.status-ready .card-label { color: #2979ff; }
+
+    .card-destination {
+      font-size: 0.65rem;
+      color: #888;
+      margin-bottom: 6px;
+      min-height: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* Status buttons inside each card */
     .status-buttons {
@@ -144,13 +224,46 @@
       transition: opacity 0.15s;
     }
 
-    .status-btn:hover {
-      opacity: 0.85;
-    }
+    .status-btn:hover { opacity: 0.85; }
 
     .status-btn.btn-in-use { background: #00c853; }
     .status-btn.btn-maintenance { background: #ff1744; }
     .status-btn.btn-ready { background: #2979ff; }
+
+    /* Address input inside card */
+    .address-input-wrap {
+      display: none;
+      margin-top: 6px;
+    }
+
+    .address-input-wrap.visible {
+      display: block;
+    }
+
+    .address-input-wrap input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #0f3460;
+      color: #fff;
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+
+    .address-input-wrap button {
+      width: 100%;
+      padding: 5px;
+      border: none;
+      border-radius: 5px;
+      background: #00c853;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .address-input-wrap button:hover { opacity: 0.85; }
 
     /* Summary counters */
     .summary {
@@ -180,6 +293,7 @@
       }
       .card { padding: 12px 8px; }
       .card-number { font-size: 1.4rem; }
+      #map { height: 280px; }
     }
   </style>
 </head>
@@ -190,6 +304,21 @@
     <div class="legend-item"><div class="legend-dot green"></div> In Use</div>
     <div class="legend-item"><div class="legend-dot red"></div> Maintenance Required</div>
     <div class="legend-item"><div class="legend-dot blue"></div> Ready for Use</div>
+  </div>
+
+  <!-- Google Maps API Key -->
+  <div class="api-key-bar" id="api-key-bar">
+    <label>Google Maps API Key:</label>
+    <input type="text" id="api-key-input" placeholder="Paste your API key here..." />
+    <button id="api-key-save" type="button">Save & Load Map</button>
+  </div>
+
+  <!-- Map Section -->
+  <div class="map-section">
+    <div class="map-header">Active Deliveries Map</div>
+    <div id="map">
+      <div class="map-placeholder">Enter your Google Maps API key above to enable the map</div>
+    </div>
   </div>
 
   <!-- Delivery Trucks Section -->
@@ -216,7 +345,14 @@
     var TRUCK_COUNT = 12;
     var TRAILER_COUNT = 50;
     var STORAGE_KEY = 'socal-batch-board';
+    var API_KEY_STORAGE = 'socal-gmap-key';
 
+    var map = null;
+    var geocoder = null;
+    var markers = [];
+    var mapsLoaded = false;
+
+    // ---- State persistence ----
     function loadState() {
       try {
         var saved = localStorage.getItem(STORAGE_KEY);
@@ -229,37 +365,160 @@
       var state = { trucks: {}, trailers: {} };
       var truckCards = document.getElementById('truck-board').getElementsByClassName('card');
       for (var i = 0; i < truckCards.length; i++) {
-        state.trucks[truckCards[i].getAttribute('data-id')] = truckCards[i].getAttribute('data-status');
+        var c = truckCards[i];
+        state.trucks[c.getAttribute('data-id')] = {
+          status: c.getAttribute('data-status'),
+          dest: c.getAttribute('data-dest') || ''
+        };
       }
       var trailerCards = document.getElementById('trailer-board').getElementsByClassName('card');
       for (var i = 0; i < trailerCards.length; i++) {
-        state.trailers[trailerCards[i].getAttribute('data-id')] = trailerCards[i].getAttribute('data-status');
+        var c = trailerCards[i];
+        state.trailers[c.getAttribute('data-id')] = {
+          status: c.getAttribute('data-status'),
+          dest: c.getAttribute('data-dest') || ''
+        };
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
-    function setCardStatus(card, status) {
+    // ---- Google Maps ----
+    function loadGoogleMaps(apiKey) {
+      if (mapsLoaded) return;
+      var script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey + '&callback=initMap';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    // Called by Google Maps script once loaded
+    window.initMap = function() {
+      mapsLoaded = true;
+      var mapDiv = document.getElementById('map');
+      mapDiv.innerHTML = '';
+
+      map = new google.maps.Map(mapDiv, {
+        center: { lat: 34.0522, lng: -118.2437 }, // Los Angeles
+        zoom: 9,
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c3e6b' }] },
+          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+          { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#515c6d' }] },
+          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
+        ]
+      });
+
+      geocoder = new google.maps.Geocoder();
+      refreshMapMarkers();
+    };
+
+    function clearMarkers() {
+      for (var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+      markers = [];
+    }
+
+    function refreshMapMarkers() {
+      if (!map || !geocoder) return;
+      clearMarkers();
+
+      var allCards = document.querySelectorAll('.card[data-status="in-use"]');
+      var bounds = new google.maps.LatLngBounds();
+      var hasMarkers = false;
+
+      for (var i = 0; i < allCards.length; i++) {
+        var card = allCards[i];
+        var dest = card.getAttribute('data-dest');
+        if (!dest) continue;
+
+        (function(cardRef, address) {
+          geocoder.geocode({ address: address }, function(results, status) {
+            if (status === 'OK' && results[0]) {
+              var pos = results[0].geometry.location;
+              var type = cardRef.getAttribute('data-type');
+              var id = cardRef.getAttribute('data-id');
+              var label = (type === 'truck' ? 'Truck ' : 'Trailer ') + id;
+
+              var marker = new google.maps.Marker({
+                map: map,
+                position: pos,
+                title: label + ' - ' + address,
+                label: { text: String(id), color: '#fff', fontWeight: '700' },
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 14,
+                  fillColor: type === 'truck' ? '#00c853' : '#00e676',
+                  fillOpacity: 1,
+                  strokeColor: '#fff',
+                  strokeWeight: 2
+                }
+              });
+
+              var infoWindow = new google.maps.InfoWindow({
+                content: '<div style="color:#222;font-size:14px;"><strong>' + label + '</strong><br>' + address + '</div>'
+              });
+
+              marker.addListener('click', function() {
+                infoWindow.open(map, marker);
+              });
+
+              markers.push(marker);
+              bounds.extend(pos);
+
+              // Fit map to show all markers
+              if (markers.length === 1) {
+                map.setCenter(pos);
+                map.setZoom(12);
+              } else {
+                map.fitBounds(bounds);
+              }
+            }
+          });
+        })(card, dest);
+      }
+    }
+
+    // ---- Card logic ----
+    function setCardStatus(card, status, dest) {
       card.classList.remove('status-in-use', 'status-maintenance', 'status-ready');
       card.classList.add(STATUSES[status].cssClass);
       card.setAttribute('data-status', status);
       card.querySelector('.card-label').textContent = STATUSES[status].label;
-      // Collapse after picking
+
+      var destDiv = card.querySelector('.card-destination');
+      if (status === 'in-use' && dest) {
+        card.setAttribute('data-dest', dest);
+        destDiv.textContent = dest;
+      } else if (status !== 'in-use') {
+        card.setAttribute('data-dest', '');
+        destDiv.textContent = '';
+      }
+
       card.classList.remove('expanded');
+      card.querySelector('.address-input-wrap').classList.remove('visible');
     }
 
     function collapseAll() {
       var expanded = document.querySelectorAll('.card.expanded');
       for (var i = 0; i < expanded.length; i++) {
         expanded[i].classList.remove('expanded');
+        expanded[i].querySelector('.address-input-wrap').classList.remove('visible');
       }
     }
 
-    function createCard(id, type, initialStatus) {
+    function createCard(id, type, initialStatus, initialDest) {
       var card = document.createElement('div');
       card.className = 'card ' + STATUSES[initialStatus].cssClass;
       card.setAttribute('data-id', id);
       card.setAttribute('data-type', type);
       card.setAttribute('data-status', initialStatus);
+      card.setAttribute('data-dest', initialDest || '');
 
       var numberDiv = document.createElement('div');
       numberDiv.className = 'card-number';
@@ -269,9 +528,39 @@
       labelDiv.className = 'card-label';
       labelDiv.textContent = STATUSES[initialStatus].label;
 
+      var destDiv = document.createElement('div');
+      destDiv.className = 'card-destination';
+      destDiv.textContent = (initialStatus === 'in-use' && initialDest) ? initialDest : '';
+
       var btnContainer = document.createElement('div');
       btnContainer.className = 'status-buttons';
 
+      // Address input (shown when "In Use" is clicked)
+      var addrWrap = document.createElement('div');
+      addrWrap.className = 'address-input-wrap';
+
+      var addrInput = document.createElement('input');
+      addrInput.setAttribute('type', 'text');
+      addrInput.setAttribute('placeholder', 'Enter destination address...');
+      addrInput.onclick = function(e) { e.stopPropagation(); };
+
+      var addrBtn = document.createElement('button');
+      addrBtn.setAttribute('type', 'button');
+      addrBtn.textContent = 'Set Destination & Send';
+      addrBtn.onclick = function(e) {
+        e.stopPropagation();
+        var address = addrInput.value.trim();
+        setCardStatus(card, 'in-use', address);
+        addrInput.value = '';
+        saveState();
+        updateSummaries();
+        refreshMapMarkers();
+      };
+
+      addrWrap.appendChild(addrInput);
+      addrWrap.appendChild(addrBtn);
+
+      // Status buttons
       var btnInUse = document.createElement('button');
       btnInUse.className = 'status-btn btn-in-use';
       btnInUse.textContent = 'In Use';
@@ -287,26 +576,27 @@
       btnReady.textContent = 'Ready';
       btnReady.setAttribute('type', 'button');
 
-      // Button click handlers
       btnInUse.onclick = function(e) {
         e.stopPropagation();
-        setCardStatus(card, 'in-use');
-        saveState();
-        updateSummaries();
+        // Show address input instead of immediately setting status
+        addrWrap.classList.add('visible');
+        addrInput.focus();
       };
 
       btnMaint.onclick = function(e) {
         e.stopPropagation();
-        setCardStatus(card, 'maintenance');
+        setCardStatus(card, 'maintenance', '');
         saveState();
         updateSummaries();
+        refreshMapMarkers();
       };
 
       btnReady.onclick = function(e) {
         e.stopPropagation();
-        setCardStatus(card, 'ready');
+        setCardStatus(card, 'ready', '');
         saveState();
         updateSummaries();
+        refreshMapMarkers();
       };
 
       btnContainer.appendChild(btnInUse);
@@ -315,9 +605,10 @@
 
       card.appendChild(numberDiv);
       card.appendChild(labelDiv);
+      card.appendChild(destDiv);
       card.appendChild(btnContainer);
+      card.appendChild(addrWrap);
 
-      // Card click to expand/collapse
       card.onclick = function(e) {
         e.stopPropagation();
         var isExpanded = card.classList.contains('expanded');
@@ -350,27 +641,51 @@
         '<span class="summary-badge blue">Ready: ' + ready + '</span>';
     }
 
-    // Build the boards
+    // ---- Init ----
     function init() {
       var state = loadState();
       var truckBoard = document.getElementById('truck-board');
       var trailerBoard = document.getElementById('trailer-board');
 
       for (var i = 1; i <= TRUCK_COUNT; i++) {
-        var status = (state && state.trucks && state.trucks[i]) ? state.trucks[i] : 'ready';
-        truckBoard.appendChild(createCard(i, 'truck', status));
+        var saved = (state && state.trucks && state.trucks[i]) ? state.trucks[i] : null;
+        var status = saved ? (saved.status || saved) : 'ready';
+        var dest = saved ? (saved.dest || '') : '';
+        truckBoard.appendChild(createCard(i, 'truck', status, dest));
       }
 
       for (var i = 1; i <= TRAILER_COUNT; i++) {
-        var status = (state && state.trailers && state.trailers[i]) ? state.trailers[i] : 'ready';
-        trailerBoard.appendChild(createCard(i, 'trailer', status));
+        var saved = (state && state.trailers && state.trailers[i]) ? state.trailers[i] : null;
+        var status = saved ? (saved.status || saved) : 'ready';
+        var dest = saved ? (saved.dest || '') : '';
+        trailerBoard.appendChild(createCard(i, 'trailer', status, dest));
       }
 
       updateSummaries();
 
-      // Click anywhere else to collapse open cards
       document.onclick = function() {
         collapseAll();
+      };
+
+      // Load saved API key
+      var savedKey = localStorage.getItem(API_KEY_STORAGE);
+      if (savedKey) {
+        document.getElementById('api-key-input').value = savedKey;
+        loadGoogleMaps(savedKey);
+      }
+
+      // Save API key button
+      document.getElementById('api-key-save').onclick = function(e) {
+        e.stopPropagation();
+        var key = document.getElementById('api-key-input').value.trim();
+        if (key) {
+          localStorage.setItem(API_KEY_STORAGE, key);
+          if (!mapsLoaded) {
+            loadGoogleMaps(key);
+          } else {
+            refreshMapMarkers();
+          }
+        }
       };
     }
 
